@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Nx build and cache
+dist/
+.nx/cache
+.nx/workspace-data
+
+# Logs
+pnpm-debug.log*
+
+# IDE - VSCode
+.vscode
+
+# IDE - WebStorm/IntelliJ
+.idea/
+*.iml
+
+# Operating Systems
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Vite cache
+.vite/
+
+# Other
+.sass-cache/
+connect.lock
+package-lock.json
