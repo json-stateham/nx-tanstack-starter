@@ -36,3 +36,5 @@ coverage/
 .sass-cache/
 connect.lock
 package-lock.json
+
+.claude
