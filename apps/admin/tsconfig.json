@@ -4,6 +4,7 @@
     "jsx": "react-jsx",
     "types": ["node", "vite/client"],
     "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
     "moduleResolution": "Bundler",
     "noEmit": true,
     "strict": true,

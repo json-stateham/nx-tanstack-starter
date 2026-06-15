@@ -1,0 +1,46 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Algo salió mal",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "confirm": "Confirmar"
+  },
+  "home": {
+    "appName": "Admin 1",
+    "controlPlane": "Panel de control",
+    "notifications": "Notificaciones",
+    "nav": {
+      "overview": "Resumen",
+      "users": "Usuarios",
+      "settings": "Configuración"
+    },
+    "header": {
+      "title": "Consola de administración",
+      "alerts": "Alertas",
+      "loading": "cargando"
+    },
+    "metrics": {
+      "services": "Servicios",
+      "servicesDetail": "Todos los sistemas responden",
+      "users": "Usuarios",
+      "usersDetail": "Puestos de trabajo activos",
+      "events": "Eventos",
+      "eventsDetail": "En cola para revisión"
+    },
+    "workspace": {
+      "title": "El espacio de trabajo está listo",
+      "description": "Nx, TanStack Start, React Query, Tailwind y shadcn UI están integrados en <code>apps/admin</code>.",
+      "routerGenerated": "Router generado",
+      "queryClientActive": "Cliente de consulta activo",
+      "tailwindCompiled": "Tailwind compilado"
+    },
+    "runtime": {
+      "title": "Tiempo de ejecución",
+      "subtitle": "Última actualización de consulta",
+      "pending": "pendiente",
+      "body": "Los datos pasan por TanStack Query y se renderizan en los componentes de shadcn."
+    }
+  }
+}

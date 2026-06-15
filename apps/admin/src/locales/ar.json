@@ -1,0 +1,46 @@
+{
+  "common": {
+    "loading": "جارٍ التحميل...",
+    "error": "حدث خطأ ما",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "confirm": "تأكيد"
+  },
+  "home": {
+    "appName": "Admin 1",
+    "controlPlane": "لوحة التحكم",
+    "notifications": "الإشعارات",
+    "nav": {
+      "overview": "نظرة عامة",
+      "users": "المستخدمون",
+      "settings": "الإعدادات"
+    },
+    "header": {
+      "title": "لوحة الإدارة",
+      "alerts": "التنبيهات",
+      "loading": "جارٍ التحميل"
+    },
+    "metrics": {
+      "services": "الخدمات",
+      "servicesDetail": "جميع الأنظمة تستجيب",
+      "users": "المستخدمون",
+      "usersDetail": "مقاعد مساحة العمل النشطة",
+      "events": "الأحداث",
+      "eventsDetail": "في قائمة الانتظار للمراجعة"
+    },
+    "workspace": {
+      "title": "مساحة العمل جاهزة",
+      "description": "تم دمج Nx و TanStack Start و React Query و Tailwind و shadcn UI في <code>apps/admin</code>.",
+      "routerGenerated": "تم إنشاء الموجه",
+      "queryClientActive": "عميل الاستعلام نشط",
+      "tailwindCompiled": "تم تجميع Tailwind"
+    },
+    "runtime": {
+      "title": "وقت التشغيل",
+      "subtitle": "آخر تحديث للاستعلام",
+      "pending": "في الانتظار",
+      "body": "تمر البيانات عبر TanStack Query وتُعرض داخل مكونات shadcn."
+    }
+  }
+}

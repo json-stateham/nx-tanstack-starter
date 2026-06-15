@@ -1,0 +1,46 @@
+{
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラーが発生しました",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "confirm": "確認"
+  },
+  "home": {
+    "appName": "Admin 1",
+    "controlPlane": "コントロールプレーン",
+    "notifications": "通知",
+    "nav": {
+      "overview": "概要",
+      "users": "ユーザー",
+      "settings": "設定"
+    },
+    "header": {
+      "title": "管理コンソール",
+      "alerts": "アラート",
+      "loading": "読み込み中"
+    },
+    "metrics": {
+      "services": "サービス",
+      "servicesDetail": "全システム応答中",
+      "users": "ユーザー",
+      "usersDetail": "アクティブなワークスペース席",
+      "events": "イベント",
+      "eventsDetail": "レビュー待ち"
+    },
+    "workspace": {
+      "title": "ワークスペースの準備完了",
+      "description": "Nx、TanStack Start、React Query、Tailwind、shadcn UI が <code>apps/admin</code> に統合されています。",
+      "routerGenerated": "ルーター生成済み",
+      "queryClientActive": "クエリクライアント起動中",
+      "tailwindCompiled": "Tailwindコンパイル済み"
+    },
+    "runtime": {
+      "title": "ランタイム",
+      "subtitle": "最新クエリ更新時刻",
+      "pending": "保留中",
+      "body": "データはTanStack Queryを通じて流れ、shadcnプリミティブ内でレンダリングされます。"
+    }
+  }
+}

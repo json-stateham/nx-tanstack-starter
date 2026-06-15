@@ -1,0 +1,46 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "confirm": "Confirm"
+  },
+  "home": {
+    "appName": "Admin 1",
+    "controlPlane": "Control plane",
+    "notifications": "Notifications",
+    "nav": {
+      "overview": "Overview",
+      "users": "Users",
+      "settings": "Settings"
+    },
+    "header": {
+      "title": "Admin console",
+      "alerts": "Alerts",
+      "loading": "loading"
+    },
+    "metrics": {
+      "services": "Services",
+      "servicesDetail": "All systems responding",
+      "users": "Users",
+      "usersDetail": "Active workspace seats",
+      "events": "Events",
+      "eventsDetail": "Queued for review"
+    },
+    "workspace": {
+      "title": "Workspace is ready",
+      "description": "Nx, TanStack Start, React Query, Tailwind, and shadcn-style UI are wired together in <code>apps/admin</code>.",
+      "routerGenerated": "Router generated",
+      "queryClientActive": "Query client active",
+      "tailwindCompiled": "Tailwind compiled"
+    },
+    "runtime": {
+      "title": "Runtime",
+      "subtitle": "Latest query refresh",
+      "pending": "pending",
+      "body": "Data comes through TanStack Query and renders inside shadcn primitives."
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "common": {
+    "loading": "Загрузка...",
+    "error": "Что-то пошло не так",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "confirm": "Подтвердить"
+  },
+  "home": {
+    "appName": "Admin 1",
+    "controlPlane": "Панель управления",
+    "notifications": "Уведомления",
+    "nav": {
+      "overview": "Обзор",
+      "users": "Пользователи",
+      "settings": "Настройки"
+    },
+    "header": {
+      "title": "Консоль администратора",
+      "alerts": "Уведомления",
+      "loading": "загрузка"
+    },
+    "metrics": {
+      "services": "Сервисы",
+      "servicesDetail": "Все системы работают",
+      "users": "Пользователи",
+      "usersDetail": "Активных рабочих мест",
+      "events": "События",
+      "eventsDetail": "Ожидают проверки"
+    },
+    "workspace": {
+      "title": "Рабочее пространство готово",
+      "description": "Nx, TanStack Start, React Query, Tailwind и shadcn UI подключены в <code>apps/admin</code>.",
+      "routerGenerated": "Роутер сгенерирован",
+      "queryClientActive": "Query клиент активен",
+      "tailwindCompiled": "Tailwind скомпилирован"
+    },
+    "runtime": {
+      "title": "Время выполнения",
+      "subtitle": "Последнее обновление запроса",
+      "pending": "ожидание",
+      "body": "Данные проходят через TanStack Query и рендерятся в shadcn примитивах."
+    }
+  }
+}

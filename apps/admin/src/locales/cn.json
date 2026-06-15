@@ -1,0 +1,46 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "error": "出了点问题",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "confirm": "确认"
+  },
+  "home": {
+    "appName": "Admin 1",
+    "controlPlane": "控制台",
+    "notifications": "通知",
+    "nav": {
+      "overview": "概览",
+      "users": "用户",
+      "settings": "设置"
+    },
+    "header": {
+      "title": "管理控制台",
+      "alerts": "警报",
+      "loading": "加载中"
+    },
+    "metrics": {
+      "services": "服务",
+      "servicesDetail": "所有系统正常响应",
+      "users": "用户",
+      "usersDetail": "活跃工作区席位",
+      "events": "事件",
+      "eventsDetail": "等待审查"
+    },
+    "workspace": {
+      "title": "工作区已就绪",
+      "description": "Nx、TanStack Start、React Query、Tailwind 和 shadcn UI 已集成至 <code>apps/admin</code>。",
+      "routerGenerated": "路由已生成",
+      "queryClientActive": "查询客户端已激活",
+      "tailwindCompiled": "Tailwind 已编译"
+    },
+    "runtime": {
+      "title": "运行时",
+      "subtitle": "最近一次查询刷新",
+      "pending": "待处理",
+      "body": "数据通过 TanStack Query 传递，并在 shadcn 组件中渲染。"
+    }
+  }
+}

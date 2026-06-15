@@ -11,7 +11,9 @@ import {
   ShieldCheck,
   Users,
 } from 'lucide-react';
+import { Trans, useTranslation } from 'react-i18next';
 
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,6 +30,8 @@ export const Route = createFileRoute('/')({
 });
 
 function AdminHome() {
+  const { t } = useTranslation();
+
   const { data: status } = useQuery({
     queryKey: ['admin-status'],
     queryFn: async () => ({
@@ -40,30 +44,36 @@ function AdminHome() {
   });
 
   const navItems = [
-    { label: 'Overview', icon: LayoutDashboard, active: true },
-    { label: 'Users', icon: Users },
-    { label: 'Settings', icon: Settings },
+    { label: t('home.nav.overview'), icon: LayoutDashboard, active: true },
+    { label: t('home.nav.users'), icon: Users },
+    { label: t('home.nav.settings'), icon: Settings },
   ];
 
   const metrics = [
     {
-      label: 'Services',
+      label: t('home.metrics.services'),
       value: status?.services ?? '-',
-      detail: 'All systems responding',
+      detail: t('home.metrics.servicesDetail'),
       icon: Boxes,
     },
     {
-      label: 'Users',
+      label: t('home.metrics.users'),
       value: status?.users.toLocaleString() ?? '-',
-      detail: 'Active workspace seats',
+      detail: t('home.metrics.usersDetail'),
       icon: Users,
     },
     {
-      label: 'Events',
+      label: t('home.metrics.events'),
       value: status?.events ?? '-',
-      detail: 'Queued for review',
+      detail: t('home.metrics.eventsDetail'),
       icon: Activity,
     },
+  ];
+
+  const checklistItems = [
+    t('home.workspace.routerGenerated'),
+    t('home.workspace.queryClientActive'),
+    t('home.workspace.tailwindCompiled'),
   ];
 
   return (
@@ -75,12 +85,12 @@ function AdminHome() {
               <ShieldCheck className="size-5" aria-hidden="true" />
             </div>
             <div>
-              <div className="text-base font-semibold">Admin 1</div>
-              <div className="text-xs text-zinc-400">Control plane</div>
+              <div className="text-base font-semibold">{t('home.appName')}</div>
+              <div className="text-xs text-zinc-400">{t('home.controlPlane')}</div>
             </div>
           </div>
           <Button
-            aria-label="Notifications"
+            aria-label={t('home.notifications')}
             className="text-zinc-200 hover:bg-zinc-900 hover:text-white lg:hidden"
             size="icon"
             variant="ghost"
@@ -90,7 +100,7 @@ function AdminHome() {
         </div>
 
         <nav
-          aria-label="Primary navigation"
+          aria-label={t('home.notifications')}
           className="mt-5 grid grid-cols-3 gap-2 lg:mt-8 lg:grid-cols-1"
         >
           {navItems.map((item) => (
@@ -117,24 +127,22 @@ function AdminHome() {
               TanStack Start
             </p>
             <h1 className="mt-1 text-3xl font-semibold tracking-normal">
-              Admin console
+              {t('home.header.title')}
             </h1>
           </div>
           <div className="flex items-center gap-2">
             <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
-              {status?.environment ?? 'loading'}
+              {status?.environment ?? t('home.header.loading')}
             </Badge>
             <Button variant="outline">
               <Bell aria-hidden="true" />
-              Alerts
+              {t('home.header.alerts')}
             </Button>
+            <LanguageSwitcher />
           </div>
         </header>
 
-        <div
-          className="grid gap-4 md:grid-cols-3"
-          aria-label="Admin metrics"
-        >
+        <div className="grid gap-4 md:grid-cols-3" aria-label="Admin metrics">
           {metrics.map((metric) => (
             <Card key={metric.label}>
               <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 pb-3">
@@ -157,50 +165,49 @@ function AdminHome() {
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
           <Card>
             <CardHeader>
-              <CardTitle>Workspace is ready</CardTitle>
+              <CardTitle>{t('home.workspace.title')}</CardTitle>
               <CardDescription>
-                Nx, TanStack Start, React Query, Tailwind, and shadcn-style UI
-                are wired together in <code>apps/admin</code>.
+                <Trans
+                  i18nKey="home.workspace.description"
+                  components={{ code: <code /> }}
+                />
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3">
-              {['Router generated', 'Query client active', 'Tailwind compiled'].map(
-                (item) => (
-                  <div
-                    className="flex items-center justify-between rounded-md border bg-muted/30 px-4 py-3"
-                    key={item}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Database
-                        className="size-4 text-primary"
-                        aria-hidden="true"
-                      />
-                      <span className="text-sm font-medium">{item}</span>
-                    </div>
-                    <ChevronRight
-                      className="size-4 text-muted-foreground"
+              {checklistItems.map((item) => (
+                <div
+                  className="flex items-center justify-between rounded-md border bg-muted/30 px-4 py-3"
+                  key={item}
+                >
+                  <div className="flex items-center gap-3">
+                    <Database
+                      className="size-4 text-primary"
                       aria-hidden="true"
                     />
+                    <span className="text-sm font-medium">{item}</span>
                   </div>
-                ),
-              )}
+                  <ChevronRight
+                    className="size-4 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                </div>
+              ))}
             </CardContent>
           </Card>
 
           <Card className="bg-zinc-950 text-zinc-50">
             <CardHeader>
-              <CardTitle>Runtime</CardTitle>
+              <CardTitle>{t('home.runtime.title')}</CardTitle>
               <CardDescription className="text-zinc-400">
-                Latest query refresh
+                {t('home.runtime.subtitle')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-semibold">
-                {status?.updatedAt ?? 'pending'}
+                {status?.updatedAt ?? t('home.runtime.pending')}
               </div>
               <p className="mt-3 text-sm text-zinc-400">
-                Data comes through TanStack Query and renders inside shadcn
-                primitives.
+                {t('home.runtime.body')}
               </p>
             </CardContent>
           </Card>

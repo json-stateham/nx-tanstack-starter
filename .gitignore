@@ -3,8 +3,7 @@ node_modules/
 
 # Nx build and cache
 dist/
-.nx/cache
-.nx/workspace-data
+.nx
 
 # Logs
 pnpm-debug.log*
@@ -38,3 +37,4 @@ connect.lock
 package-lock.json
 
 .claude
+tmp
