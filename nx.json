@@ -6,9 +6,18 @@
       "sharedGlobals"
     ],
     "production": [
-      "default"
+      "default",
+      "!{projectRoot}/**/*.spec.ts",
+      "!{projectRoot}/**/*.test.ts",
+      "!{projectRoot}/**/*.spec.tsx",
+      "!{projectRoot}/**/*.test.tsx"
     ],
-    "sharedGlobals": []
+    "sharedGlobals": [
+      "{workspaceRoot}/nx.json",
+      "{workspaceRoot}/tsconfig.base.json",
+      "{workspaceRoot}/pnpm-workspace.yaml",
+      "{workspaceRoot}/package.json"
+    ]
   },
   "targetDefaults": {
     "build": {
@@ -24,6 +33,9 @@
         "^production"
       ],
       "cache": true
+    },
+    "serve": {
+      "cache": false
     }
   },
   "analytics": true

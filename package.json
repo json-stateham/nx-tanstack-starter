@@ -6,9 +6,19 @@
   "scripts": {
     "admin": "nx serve admin",
     "build:admin": "nx build admin",
-    "typecheck": "nx typecheck admin"
+    "backend": "nx serve backend",
+    "build:backend": "nx build backend",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d",
+    "db:logs": "docker compose logs -f postgres",
+    "typecheck": "nx typecheck admin",
+    "deps": "nx graph"
   },
   "dependencies": {
+    "@nestjs/common": "^11.1.27",
+    "@nestjs/core": "^11.1.27",
+    "@nestjs/platform-express": "^11.1.27",
     "@radix-ui/react-select": "^2.3.0",
     "@tanstack/react-query": "latest",
     "@tanstack/react-router": "latest",
@@ -20,6 +30,8 @@
     "react": "latest",
     "react-dom": "latest",
     "react-i18next": "^17.0.8",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
@@ -29,6 +41,7 @@
     "@nx/vite": "^22.7.5",
     "@tanstack/router-generator": "^1.167.17",
     "@tanstack/router-plugin": "latest",
+    "@types/express": "^5.0.6",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
