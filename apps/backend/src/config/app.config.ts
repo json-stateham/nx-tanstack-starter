@@ -22,7 +22,7 @@ export const validateEnv = (env: Record<string, unknown>): AppConfig => {
     JWT_SECRET: String(env['JWT_SECRET']),
     NODE_ENV: String(env['NODE_ENV'] ?? 'development'),
     PORT: Number(env['PORT'] ?? 3000),
-    FRONTEND_URL: String(env['FRONTEND_URL'] ?? 'http://localhost:4200'),
+    FRONTEND_URL: String(env['FRONTEND_URL'] || 'http://localhost:4200'),
     SMTP_HOST: env['SMTP_HOST'] ? String(env['SMTP_HOST']) : undefined,
     SMTP_PORT: Number(env['SMTP_PORT'] ?? 587),
     SMTP_USER: env['SMTP_USER'] ? String(env['SMTP_USER']) : undefined,

@@ -42,6 +42,7 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @Roles('ADMIN')
   update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
     return this.usersService.update(id, dto);
   }

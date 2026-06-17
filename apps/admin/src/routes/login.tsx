@@ -74,6 +74,10 @@ function LoginPage() {
     onSuccess: () => navigate({ to: '/' }),
   });
 
+  const resendMutation = useMutation({
+    mutationFn: () => authFetch('/auth/resend-verification', { email: pendingEmail }),
+  });
+
   if (pendingEmail !== null) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
@@ -124,13 +128,23 @@ function LoginPage() {
                 {verifyMutation.isPending ? t('common.loading') : t('login.submitVerify')}
               </Button>
 
-              <button
-                type="button"
-                onClick={() => setPendingEmail(null)}
-                className="text-center text-sm text-muted-foreground hover:text-foreground"
-              >
-                {t('login.backToLogin')}
-              </button>
+              <div className="flex items-center justify-between text-sm">
+                <button
+                  type="button"
+                  onClick={() => setPendingEmail(null)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  {t('login.backToLogin')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => resendMutation.mutate()}
+                  disabled={resendMutation.isPending}
+                  className="text-muted-foreground hover:text-foreground disabled:opacity-50"
+                >
+                  {resendMutation.isPending ? t('common.loading') : t('login.resend')}
+                </button>
+              </div>
             </form>
           </CardContent>
         </Card>

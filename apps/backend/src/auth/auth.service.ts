@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { UserRole } from '@prisma/client';
 import { hash, compare } from 'bcryptjs';
@@ -31,9 +31,12 @@ const INVITE_TTL_MS = 48 * 60 * 60 * 1000;
 
 const generateOtp = (): string => String(100000 + randomInt(900000));
 const generateInviteToken = (): string => randomBytes(32).toString('hex');
+const sha256 = (value: string): string => createHash('sha256').update(value).digest('hex');
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -84,12 +87,16 @@ export class AuthService {
       include: { user: true },
     });
 
-    if (!provider?.secret) throw new UnauthorizedException('Invalid credentials');
+    if (!provider?.secret) {
+      this.logger.warn(`Failed login — unknown email: ${email}`);
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
     // Always run bcrypt to prevent timing-based status enumeration
     const valid = await compare(input.password, provider.secret);
 
     if (!valid || provider.user.status !== 'ACTIVE') {
+      this.logger.warn(`Failed login attempt: ${email}`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -98,6 +105,7 @@ export class AuthService {
       data: { lastLoginAt: new Date() },
     });
 
+    this.logger.log(`Successful login: ${email} (userId: ${provider.user.id})`);
     return this.generateTokens(provider.user.id, email, provider.user.role);
   }
 
@@ -135,12 +143,16 @@ export class AuthService {
   }
 
   async acceptInvite(input: { token: string; password: string }): Promise<Tokens> {
+    // Invite tokens are stored as SHA-256 hashes — same pattern as refresh tokens
+    const tokenHash = sha256(input.token);
+
     const otp = await this.prisma.otpCode.findFirst({
       where: {
         type: 'USER_INVITE',
-        code: input.token,
+        code: tokenHash,
         usedAt: null,
         expiresAt: { gt: new Date() },
+        user: { deletedAt: null },
       },
       include: { user: true },
     });
@@ -165,15 +177,45 @@ export class AuthService {
 
   async createInviteToken(userId: string, email: string): Promise<void> {
     const token = generateInviteToken();
+    // Store the hash — never the raw token (same pattern as refresh tokens)
     await this.prisma.otpCode.create({
       data: {
         userId,
-        code: token,
+        code: sha256(token),
         type: 'USER_INVITE',
         expiresAt: new Date(Date.now() + INVITE_TTL_MS),
       },
     });
     await this.emailService.sendInviteEmail(email, token);
+  }
+
+  async resendVerification(email: string): Promise<void> {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const user = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail, deletedAt: null },
+    });
+
+    // Always return silently — never reveal whether the email exists
+    if (!user || user.status !== 'PENDING_VERIFICATION') return;
+
+    // Invalidate all existing unused OTP codes before issuing a new one
+    await this.prisma.otpCode.updateMany({
+      where: { userId: user.id, type: 'EMAIL_VERIFICATION', usedAt: null },
+      data: { usedAt: new Date() },
+    });
+
+    const code = generateOtp();
+    await this.prisma.otpCode.create({
+      data: {
+        userId: user.id,
+        code,
+        type: 'EMAIL_VERIFICATION',
+        expiresAt: new Date(Date.now() + OTP_TTL_MS),
+      },
+    });
+
+    await this.emailService.sendVerificationEmail(normalizedEmail, code);
   }
 
   async refreshTokens(token: string): Promise<Tokens> {
@@ -184,7 +226,7 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const tokenHash = sha256(token);
     const stored = await this.prisma.refreshToken.findUnique({
       where: { tokenHash },
       include: { user: true },
@@ -213,7 +255,7 @@ export class AuthService {
   }
 
   async logout(token: string): Promise<void> {
-    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const tokenHash = sha256(token);
     await this.prisma.refreshToken.updateMany({
       where: { tokenHash, revokedAt: null },
       data: { revokedAt: new Date() },
@@ -226,11 +268,10 @@ export class AuthService {
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
-    const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
     await this.prisma.refreshToken.create({
       data: {
         userId,
-        tokenHash,
+        tokenHash: sha256(refreshToken),
         expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
       },
     });

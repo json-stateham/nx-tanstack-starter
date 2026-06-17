@@ -17,15 +17,17 @@ import { CurrentUser } from './decorators/current-user.decorator';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { JwtUser } from './types';
 
-const IS_PROD = process.env['NODE_ENV'] === 'production';
+// Secure unless explicitly in development — safe default for accidental misconfig
+const SECURE_COOKIES = process.env['NODE_ENV'] !== 'development';
 
 const ACCESS_COOKIE: CookieOptions = {
   httpOnly: true,
-  secure: IS_PROD,
+  secure: SECURE_COOKIES,
   sameSite: 'lax',
   maxAge: 15 * 60 * 1000,
 };
@@ -33,7 +35,7 @@ const ACCESS_COOKIE: CookieOptions = {
 // Scope the refresh cookie to its own endpoint to limit exposure
 const REFRESH_COOKIE: CookieOptions = {
   httpOnly: true,
-  secure: IS_PROD,
+  secure: SECURE_COOKIES,
   sameSite: 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000,
   path: '/api/v1/auth/refresh',
@@ -54,6 +56,14 @@ export class AuthController {
   async register(@Body() dto: RegisterDto): Promise<{ message: string }> {
     await this.authService.register(dto);
     return { message: 'Registration successful. Please check your email to verify your account.' };
+  }
+
+  @Post('resend-verification')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  async resendVerification(@Body() dto: ResendVerificationDto): Promise<{ ok: true }> {
+    await this.authService.resendVerification(dto.email);
+    return { ok: true };
   }
 
   @Post('verify-email')
