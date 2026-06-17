@@ -86,7 +86,51 @@ export class AuthService {
     return this.generateTokens(provider.user.id, provider.user.email, provider.user.role);
   }
 
-  async generateTokens(userId: string, email: string, role: UserRole): Promise<Tokens> {
+  async refreshTokens(token: string): Promise<Tokens> {
+    let payload: JwtPayload;
+    try {
+      payload = this.jwtService.verify<JwtPayload>(token);
+    } catch {
+      throw new UnauthorizedException();
+    }
+
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const stored = await this.prisma.refreshToken.findUnique({
+      where: { tokenHash },
+      include: { user: true },
+    });
+
+    if (!stored || stored.revokedAt !== null || stored.expiresAt < new Date()) {
+      // Revoked or missing token may indicate theft — invalidate all active tokens for this user
+      await this.prisma.refreshToken.updateMany({
+        where: { userId: payload.sub, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      throw new UnauthorizedException();
+    }
+
+    if (stored.user.status !== 'ACTIVE') {
+      throw new UnauthorizedException('Account is suspended or banned');
+    }
+
+    // Rotate: revoke old token, issue a new pair
+    await this.prisma.refreshToken.update({
+      where: { id: stored.id },
+      data: { revokedAt: new Date() },
+    });
+
+    return this.generateTokens(stored.user.id, stored.user.email, stored.user.role);
+  }
+
+  async logout(token: string): Promise<void> {
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    await this.prisma.refreshToken.updateMany({
+      where: { tokenHash, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  private async generateTokens(userId: string, email: string, role: UserRole): Promise<Tokens> {
     const payload: JwtPayload = { sub: userId, email, role };
 
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
@@ -102,37 +146,5 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken };
-  }
-
-  async refreshTokens(token: string): Promise<Tokens> {
-    let payload: JwtPayload;
-    try {
-      payload = this.jwtService.verify<JwtPayload>(token);
-    } catch {
-      throw new UnauthorizedException();
-    }
-
-    const tokenHash = createHash('sha256').update(token).digest('hex');
-    const stored = await this.prisma.refreshToken.findUnique({ where: { tokenHash } });
-
-    if (!stored || stored.revokedAt !== null || stored.expiresAt < new Date()) {
-      throw new UnauthorizedException();
-    }
-
-    // Rotate: revoke old token, issue a new pair
-    await this.prisma.refreshToken.update({
-      where: { id: stored.id },
-      data: { revokedAt: new Date() },
-    });
-
-    return this.generateTokens(payload.sub, payload.email, payload.role);
-  }
-
-  async logout(token: string): Promise<void> {
-    const tokenHash = createHash('sha256').update(token).digest('hex');
-    await this.prisma.refreshToken.updateMany({
-      where: { tokenHash, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
   }
 }

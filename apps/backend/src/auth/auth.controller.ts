@@ -10,23 +10,14 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import type { CookieOptions, Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { JwtUser } from './types';
-
-type RegisterBody = {
-  email: string;
-  password: string;
-  firstName?: string;
-  lastName?: string;
-};
-
-type LoginBody = {
-  email: string;
-  password: string;
-};
 
 const IS_PROD = process.env['NODE_ENV'] === 'production';
 
@@ -51,24 +42,26 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
   async register(
-    @Body() body: RegisterBody,
+    @Body() dto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ ok: true }> {
-    const { accessToken, refreshToken } = await this.authService.register(body);
+    const { accessToken, refreshToken } = await this.authService.register(dto);
     res.cookie('access_token', accessToken, ACCESS_COOKIE);
     res.cookie('refresh_token', refreshToken, REFRESH_COOKIE);
     return { ok: true };
   }
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   async login(
-    @Body() body: LoginBody,
+    @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ ok: true }> {
-    const { accessToken, refreshToken } = await this.authService.login(body);
+    const { accessToken, refreshToken } = await this.authService.login(dto);
     res.cookie('access_token', accessToken, ACCESS_COOKIE);
     res.cookie('refresh_token', refreshToken, REFRESH_COOKIE);
     return { ok: true };

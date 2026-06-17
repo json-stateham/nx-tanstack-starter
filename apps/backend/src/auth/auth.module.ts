@@ -12,7 +12,13 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   imports: [
     PrismaModule,
     PassportModule,
-    JwtModule.register({ secret: process.env['JWT_SECRET']! }),
+    JwtModule.registerAsync({
+      useFactory: () => {
+        const secret = process.env['JWT_SECRET'];
+        if (!secret) throw new Error('JWT_SECRET is not defined');
+        return { secret };
+      },
+    }),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],

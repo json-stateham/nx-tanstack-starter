@@ -1,9 +1,11 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import type { CreateUserDto } from './dto/create-user.dto';
-import type { QueryUsersDto } from './dto/query-users.dto';
-import type { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserDto } from './dto/create-user.dto';
+import { QueryUsersDto } from './dto/query-users.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+
+const MAX_PAGE_SIZE = 100;
 
 @Injectable()
 export class UsersService {
@@ -11,7 +13,7 @@ export class UsersService {
 
   async findAll(query: QueryUsersDto) {
     const page = query.page ?? 1;
-    const limit = query.limit ?? 20;
+    const limit = Math.min(query.limit ?? 20, MAX_PAGE_SIZE);
     const skip = (page - 1) * limit;
 
     const where: Prisma.UserWhereInput = {
@@ -46,7 +48,7 @@ export class UsersService {
       where: { id, deletedAt: null },
       include: { profile: true, addresses: true },
     });
-    if (!user) throw new NotFoundException(`User ${id} not found`);
+    if (!user) throw new NotFoundException('User not found');
     return user;
   }
 
