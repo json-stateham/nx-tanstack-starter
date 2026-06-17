@@ -42,5 +42,16 @@
       "pending": "pendiente",
       "body": "Los datos pasan por TanStack Query y se renderizan en los componentes de shadcn."
     }
+  },
+  "login": {
+    "tabLogin": "Iniciar sesión",
+    "tabRegister": "Registrarse",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "optional": "opcional",
+    "submitLogin": "Iniciar sesión",
+    "submitRegister": "Crear cuenta"
   }
 }

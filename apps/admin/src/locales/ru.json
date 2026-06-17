@@ -42,5 +42,16 @@
       "pending": "ожидание",
       "body": "Данные проходят через TanStack Query и рендерятся в shadcn примитивах."
     }
+  },
+  "login": {
+    "tabLogin": "Войти",
+    "tabRegister": "Зарегистрироваться",
+    "email": "Email",
+    "password": "Пароль",
+    "firstName": "Имя",
+    "lastName": "Фамилия",
+    "optional": "необязательно",
+    "submitLogin": "Войти",
+    "submitRegister": "Создать аккаунт"
   }
 }

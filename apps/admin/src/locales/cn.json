@@ -42,5 +42,16 @@
       "pending": "待处理",
       "body": "数据通过 TanStack Query 传递，并在 shadcn 组件中渲染。"
     }
+  },
+  "login": {
+    "tabLogin": "登录",
+    "tabRegister": "注册",
+    "email": "电子邮件",
+    "password": "密码",
+    "firstName": "名",
+    "lastName": "姓",
+    "optional": "可选",
+    "submitLogin": "登录",
+    "submitRegister": "创建账户"
   }
 }

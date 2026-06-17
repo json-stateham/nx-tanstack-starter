@@ -42,5 +42,16 @@
       "pending": "pending",
       "body": "Data comes through TanStack Query and renders inside shadcn primitives."
     }
+  },
+  "login": {
+    "tabLogin": "Sign in",
+    "tabRegister": "Register",
+    "email": "Email",
+    "password": "Password",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "optional": "optional",
+    "submitLogin": "Sign in",
+    "submitRegister": "Create account"
   }
 }

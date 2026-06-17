@@ -6,3 +6,131 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// System-level access roles only.
+// Seller status is determined by the presence of SellerProfile, not by this enum.
+enum UserRole {
+  BUYER
+  ADMIN
+  MODERATOR
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING_VERIFICATION
+  SUSPENDED
+  BANNED
+}
+
+enum OtpType {
+  EMAIL_VERIFICATION
+  PHONE_VERIFICATION
+  PASSWORD_RESET
+}
+
+// Add GOOGLE, PHONE, etc. here without touching the User model.
+enum AuthProviderType {
+  EMAIL
+  PHONE
+}
+
+model User {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  phone     String?    @unique
+  role      UserRole   @default(BUYER)
+  status    UserStatus @default(PENDING_VERIFICATION)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  deletedAt DateTime?
+
+  // Set when the user confirms ownership of the address via OTP / magic link.
+  // Null means unverified.
+  emailVerifiedAt DateTime?
+  phoneVerifiedAt DateTime?
+
+  // Updated on every successful login. Useful for fraud detection and cleanup.
+  lastLoginAt DateTime?
+
+  profile       UserProfile?
+  addresses     UserAddress[]
+  refreshTokens RefreshToken[]
+  otpCodes      OtpCode[]
+  // Presence of this relation means the user is a seller.
+  sellerProfile SellerProfile?
+  authProviders AuthProvider[]
+}
+
+// One row per authentication method: email+password, phone OTP, OAuth, etc.
+model AuthProvider {
+  id         String           @id @default(uuid())
+  userId     String
+  type       AuthProviderType
+  identifier String           // email address or phone number
+  secret     String?          // bcrypt hash for EMAIL; null for OTP/OAuth
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([type, identifier])
+  @@index([userId])
+}
+
+model UserProfile {
+  id        String    @id @default(uuid())
+  userId    String    @unique
+  firstName String
+  lastName  String
+  avatarUrl String?
+  birthDate DateTime?
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserAddress {
+  id         String  @id @default(uuid())
+  userId     String
+  label      String
+  country    String  @default("RU")
+  city       String
+  street     String
+  apartment  String?
+  postalCode String
+  isDefault  Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model OtpCode {
+  id        String    @id @default(uuid())
+  userId    String
+  code      String
+  type      OtpType
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SellerProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  shopName  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

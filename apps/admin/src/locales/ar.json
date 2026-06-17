@@ -42,5 +42,16 @@
       "pending": "في الانتظار",
       "body": "تمر البيانات عبر TanStack Query وتُعرض داخل مكونات shadcn."
     }
+  },
+  "login": {
+    "tabLogin": "تسجيل الدخول",
+    "tabRegister": "إنشاء حساب",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "firstName": "الاسم الأول",
+    "lastName": "اسم العائلة",
+    "optional": "اختياري",
+    "submitLogin": "تسجيل الدخول",
+    "submitRegister": "إنشاء حساب"
   }
 }

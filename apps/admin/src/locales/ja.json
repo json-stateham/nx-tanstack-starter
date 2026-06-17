@@ -42,5 +42,16 @@
       "pending": "保留中",
       "body": "データはTanStack Queryを通じて流れ、shadcnプリミティブ内でレンダリングされます。"
     }
+  },
+  "login": {
+    "tabLogin": "ログイン",
+    "tabRegister": "登録",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "firstName": "名",
+    "lastName": "姓",
+    "optional": "任意",
+    "submitLogin": "ログイン",
+    "submitRegister": "アカウント作成"
   }
 }
