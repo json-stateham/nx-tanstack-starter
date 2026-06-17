@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Logger,
   Param,
   Patch,
   Post,
@@ -14,6 +15,8 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { JwtUser } from '../auth/types';
 import { CreateUserDto } from './dto/create-user.dto';
 import { QueryUsersDto } from './dto/query-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -23,6 +26,8 @@ import { UsersService } from './users.service';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'MODERATOR')
 export class UsersController {
+  private readonly logger = new Logger(UsersController.name);
+
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
@@ -37,20 +42,25 @@ export class UsersController {
 
   @Post()
   @Roles('ADMIN')
-  create(@Body() dto: CreateUserDto) {
-    return this.usersService.create(dto);
+  async create(@CurrentUser() admin: JwtUser, @Body() dto: CreateUserDto) {
+    const user = await this.usersService.create(dto);
+    this.logger.log(`Admin ${admin.id} invited user: ${dto.email}`);
+    return user;
   }
 
   @Patch(':id')
   @Roles('ADMIN')
-  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
-    return this.usersService.update(id, dto);
+  async update(@CurrentUser() admin: JwtUser, @Param('id') id: string, @Body() dto: UpdateUserDto) {
+    const user = await this.usersService.update(id, dto);
+    this.logger.log(`Admin ${admin.id} updated user ${id}: ${Object.keys(dto).join(', ')}`);
+    return user;
   }
 
   @Delete(':id')
   @Roles('ADMIN')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
+  async remove(@CurrentUser() admin: JwtUser, @Param('id') id: string) {
+    await this.usersService.remove(id);
+    this.logger.log(`Admin ${admin.id} deleted user ${id}`);
   }
 }
