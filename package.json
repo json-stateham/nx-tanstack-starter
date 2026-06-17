@@ -8,6 +8,7 @@
     "build:admin": "nx build admin",
     "backend": "nx serve backend",
     "build:backend": "nx build backend",
+    "test:backend": "nx test backend",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
