@@ -52,6 +52,21 @@
     "lastName": "اسم العائلة",
     "optional": "اختياري",
     "submitLogin": "تسجيل الدخول",
-    "submitRegister": "إنشاء حساب"
+    "submitRegister": "إنشاء حساب",
+    "checkEmailTitle": "تحقق من بريدك الإلكتروني",
+    "checkEmailDesc": "أرسلنا رمزًا مكونًا من 6 أرقام إلى {{email}}. أدخله أدناه لتفعيل حسابك.",
+    "verificationCode": "رمز التحقق",
+    "submitVerify": "تحقق",
+    "backToLogin": "العودة إلى تسجيل الدخول",
+    "resend": "إعادة إرسال الرمز"
+  },
+  "acceptInvite": {
+    "title": "تعيين كلمة المرور",
+    "desc": "لقد تمت دعوتك. أنشئ كلمة مرور لتفعيل حسابك.",
+    "password": "كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "passwordMismatch": "كلمتا المرور غير متطابقتين",
+    "submit": "تفعيل الحساب",
+    "invalidToken": "رابط الدعوة غير صالح أو منتهي الصلاحية."
   }
 }

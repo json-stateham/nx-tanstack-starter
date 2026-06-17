@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
+import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { QueryUsersDto } from './dto/query-users.dto';
@@ -9,7 +10,10 @@ const MAX_PAGE_SIZE = 100;
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly authService: AuthService,
+  ) {}
 
   async findAll(query: QueryUsersDto) {
     const page = query.page ?? 1;
@@ -56,23 +60,24 @@ export class UsersService {
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existing) throw new ConflictException('Email already in use');
 
-    return this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
         email: dto.email,
         phone: dto.phone,
         role: dto.role ?? 'BUYER',
-        status: dto.status ?? 'ACTIVE',
+        status: 'PENDING_VERIFICATION',
         ...(dto.firstName && {
           profile: {
-            create: {
-              firstName: dto.firstName,
-              lastName: dto.lastName ?? '',
-            },
+            create: { firstName: dto.firstName, lastName: dto.lastName ?? '' },
           },
         }),
       },
       include: { profile: true },
     });
+
+    await this.authService.createInviteToken(user.id, user.email);
+
+    return user;
   }
 
   async update(id: string, dto: UpdateUserDto) {

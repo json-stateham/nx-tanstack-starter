@@ -26,6 +26,7 @@ enum OtpType {
   EMAIL_VERIFICATION
   PHONE_VERIFICATION
   PASSWORD_RESET
+  USER_INVITE
 }
 
 // Add GOOGLE, PHONE, etc. here without touching the User model.

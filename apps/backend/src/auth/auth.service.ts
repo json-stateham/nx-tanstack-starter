@@ -2,7 +2,8 @@ import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/co
 import { JwtService } from '@nestjs/jwt';
 import type { UserRole } from '@prisma/client';
 import { hash, compare } from 'bcryptjs';
-import { createHash } from 'node:crypto';
+import { randomBytes, randomInt, createHash } from 'node:crypto';
+import { EmailService } from '../common/email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { JwtPayload } from './types';
 
@@ -25,57 +26,71 @@ type Tokens = {
 
 const BCRYPT_ROUNDS = 10;
 const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const OTP_TTL_MS = 15 * 60 * 1000;
+const INVITE_TTL_MS = 48 * 60 * 60 * 1000;
+
+const generateOtp = (): string => String(100000 + randomInt(900000));
+const generateInviteToken = (): string => randomBytes(32).toString('hex');
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly emailService: EmailService,
   ) {}
 
-  async register(input: RegisterInput): Promise<Tokens> {
+  async register(input: RegisterInput): Promise<void> {
+    const email = input.email.toLowerCase().trim();
+
     const existing = await this.prisma.authProvider.findUnique({
-      where: { type_identifier: { type: 'EMAIL', identifier: input.email } },
+      where: { type_identifier: { type: 'EMAIL', identifier: email } },
     });
     if (existing) throw new ConflictException('Email already registered');
 
     const secret = await hash(input.password, BCRYPT_ROUNDS);
+    const code = generateOtp();
 
-    const user = await this.prisma.user.create({
+    await this.prisma.user.create({
       data: {
-        email: input.email,
-        status: 'ACTIVE',
+        email,
+        status: 'PENDING_VERIFICATION',
         authProviders: {
-          create: { type: 'EMAIL', identifier: input.email, secret },
+          create: { type: 'EMAIL', identifier: email, secret },
         },
         ...(input.firstName && {
           profile: {
-            create: {
-              firstName: input.firstName,
-              lastName: input.lastName ?? '',
-            },
+            create: { firstName: input.firstName, lastName: input.lastName ?? '' },
           },
         }),
+        otpCodes: {
+          create: {
+            code,
+            type: 'EMAIL_VERIFICATION',
+            expiresAt: new Date(Date.now() + OTP_TTL_MS),
+          },
+        },
       },
     });
 
-    return this.generateTokens(user.id, user.email, user.role);
+    await this.emailService.sendVerificationEmail(email, code);
   }
 
   async login(input: LoginInput): Promise<Tokens> {
+    const email = input.email.toLowerCase().trim();
+
     const provider = await this.prisma.authProvider.findUnique({
-      where: { type_identifier: { type: 'EMAIL', identifier: input.email } },
+      where: { type_identifier: { type: 'EMAIL', identifier: email } },
       include: { user: true },
     });
 
-    // Use the same error for both "not found" and "wrong password" to avoid user enumeration
     if (!provider?.secret) throw new UnauthorizedException('Invalid credentials');
 
+    // Always run bcrypt to prevent timing-based status enumeration
     const valid = await compare(input.password, provider.secret);
-    if (!valid) throw new UnauthorizedException('Invalid credentials');
 
-    if (provider.user.status !== 'ACTIVE') {
-      throw new UnauthorizedException('Account is suspended or banned');
+    if (!valid || provider.user.status !== 'ACTIVE') {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     await this.prisma.user.update({
@@ -83,7 +98,82 @@ export class AuthService {
       data: { lastLoginAt: new Date() },
     });
 
-    return this.generateTokens(provider.user.id, provider.user.email, provider.user.role);
+    return this.generateTokens(provider.user.id, email, provider.user.role);
+  }
+
+  async verifyEmail(input: { email: string; code: string }): Promise<Tokens> {
+    const email = input.email.toLowerCase().trim();
+
+    const user = await this.prisma.user.findUnique({
+      where: { email, deletedAt: null },
+    });
+
+    // Same error for "not found" and "invalid code" to avoid enumeration
+    if (!user) throw new UnauthorizedException('Invalid or expired code');
+
+    const otp = await this.prisma.otpCode.findFirst({
+      where: {
+        userId: user.id,
+        type: 'EMAIL_VERIFICATION',
+        code: input.code,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+
+    if (!otp) throw new UnauthorizedException('Invalid or expired code');
+
+    await this.prisma.$transaction([
+      this.prisma.otpCode.update({ where: { id: otp.id }, data: { usedAt: new Date() } }),
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: { status: 'ACTIVE', emailVerifiedAt: new Date() },
+      }),
+    ]);
+
+    return this.generateTokens(user.id, user.email, user.role);
+  }
+
+  async acceptInvite(input: { token: string; password: string }): Promise<Tokens> {
+    const otp = await this.prisma.otpCode.findFirst({
+      where: {
+        type: 'USER_INVITE',
+        code: input.token,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      include: { user: true },
+    });
+
+    if (!otp) throw new UnauthorizedException('Invalid or expired invite');
+
+    const secret = await hash(input.password, BCRYPT_ROUNDS);
+
+    await this.prisma.$transaction([
+      this.prisma.otpCode.update({ where: { id: otp.id }, data: { usedAt: new Date() } }),
+      this.prisma.authProvider.create({
+        data: { userId: otp.userId, type: 'EMAIL', identifier: otp.user.email, secret },
+      }),
+      this.prisma.user.update({
+        where: { id: otp.userId },
+        data: { status: 'ACTIVE', emailVerifiedAt: new Date() },
+      }),
+    ]);
+
+    return this.generateTokens(otp.user.id, otp.user.email, otp.user.role);
+  }
+
+  async createInviteToken(userId: string, email: string): Promise<void> {
+    const token = generateInviteToken();
+    await this.prisma.otpCode.create({
+      data: {
+        userId,
+        code: token,
+        type: 'USER_INVITE',
+        expiresAt: new Date(Date.now() + INVITE_TTL_MS),
+      },
+    });
+    await this.emailService.sendInviteEmail(email, token);
   }
 
   async refreshTokens(token: string): Promise<Tokens> {
@@ -101,7 +191,7 @@ export class AuthService {
     });
 
     if (!stored || stored.revokedAt !== null || stored.expiresAt < new Date()) {
-      // Revoked or missing token may indicate theft — invalidate all active tokens for this user
+      // Revoked or missing token may indicate theft — invalidate all active tokens
       await this.prisma.refreshToken.updateMany({
         where: { userId: payload.sub, revokedAt: null },
         data: { revokedAt: new Date() },

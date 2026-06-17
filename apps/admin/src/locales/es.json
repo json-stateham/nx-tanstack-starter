@@ -52,6 +52,21 @@
     "lastName": "Apellido",
     "optional": "opcional",
     "submitLogin": "Iniciar sesión",
-    "submitRegister": "Crear cuenta"
+    "submitRegister": "Crear cuenta",
+    "checkEmailTitle": "Revisa tu correo",
+    "checkEmailDesc": "Enviamos un código de 6 dígitos a {{email}}. Ingrésalo a continuación para activar tu cuenta.",
+    "verificationCode": "Código de verificación",
+    "submitVerify": "Verificar",
+    "backToLogin": "Volver al inicio de sesión",
+    "resend": "Reenviar código"
+  },
+  "acceptInvite": {
+    "title": "Establece tu contraseña",
+    "desc": "Has sido invitado. Crea una contraseña para activar tu cuenta.",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar contraseña",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "submit": "Activar cuenta",
+    "invalidToken": "Este enlace de invitación es inválido o ha expirado."
   }
 }

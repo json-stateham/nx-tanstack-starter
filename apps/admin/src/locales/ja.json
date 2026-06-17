@@ -52,6 +52,21 @@
     "lastName": "姓",
     "optional": "任意",
     "submitLogin": "ログイン",
-    "submitRegister": "アカウント作成"
+    "submitRegister": "アカウント作成",
+    "checkEmailTitle": "メールを確認してください",
+    "checkEmailDesc": "{{email}} に6桁のコードを送信しました。以下に入力してアカウントを有効化してください。",
+    "verificationCode": "確認コード",
+    "submitVerify": "確認する",
+    "backToLogin": "ログインに戻る",
+    "resend": "コードを再送"
+  },
+  "acceptInvite": {
+    "title": "パスワードを設定",
+    "desc": "招待されました。パスワードを作成してアカウントを有効化してください。",
+    "password": "パスワード",
+    "confirmPassword": "パスワード確認",
+    "passwordMismatch": "パスワードが一致しません",
+    "submit": "アカウントを有効化",
+    "invalidToken": "この招待リンクは無効または期限切れです。"
   }
 }

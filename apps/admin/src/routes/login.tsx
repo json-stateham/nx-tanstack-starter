@@ -17,7 +17,7 @@ export const Route = createFileRoute('/login')({
 
 type Tab = 'login' | 'register';
 
-async function authFetch(path: string, body: object): Promise<void> {
+async function authFetch<T = void>(path: string, body: object): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -36,6 +36,8 @@ async function authFetch(path: string, body: object): Promise<void> {
         : 'Request failed';
     throw new Error(message);
   }
+
+  return res.json() as Promise<T>;
 }
 
 function LoginPage() {
@@ -47,6 +49,8 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [code, setCode] = useState('');
 
   const loginMutation = useMutation({
     mutationFn: () => authFetch('/auth/login', { email, password }),
@@ -61,8 +65,78 @@ function LoginPage() {
         firstName: firstName || undefined,
         lastName: lastName || undefined,
       }),
+    onSuccess: () => setPendingEmail(email),
+  });
+
+  const verifyMutation = useMutation({
+    mutationFn: () =>
+      authFetch('/auth/verify-email', { email: pendingEmail, code }),
     onSuccess: () => navigate({ to: '/' }),
   });
+
+  if (pendingEmail !== null) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
+        <div className="mb-8 flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-md bg-emerald-400 text-zinc-950">
+            <ShieldCheck className="size-5" aria-hidden="true" />
+          </div>
+          <span className="text-xl font-semibold">{t('home.appName')}</span>
+        </div>
+
+        <Card className="w-full max-w-sm">
+          <CardHeader className="pb-2">
+            <h2 className="text-lg font-semibold">{t('login.checkEmailTitle')}</h2>
+            <p className="text-sm text-muted-foreground">
+              {t('login.checkEmailDesc', { email: pendingEmail })}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                verifyMutation.mutate();
+              }}
+              className="grid gap-4"
+            >
+              <div className="grid gap-1.5">
+                <Label htmlFor="code">{t('login.verificationCode')}</Label>
+                <Input
+                  id="code"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="\d{6}"
+                  maxLength={6}
+                  autoComplete="one-time-code"
+                  required
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                />
+              </div>
+
+              {verifyMutation.error && (
+                <p role="alert" className="text-sm text-destructive">
+                  {verifyMutation.error.message}
+                </p>
+              )}
+
+              <Button type="submit" className="w-full" disabled={verifyMutation.isPending}>
+                {verifyMutation.isPending ? t('common.loading') : t('login.submitVerify')}
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => setPendingEmail(null)}
+                className="text-center text-sm text-muted-foreground hover:text-foreground"
+              >
+                {t('login.backToLogin')}
+              </button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const activeError = tab === 'login' ? loginMutation.error : registerMutation.error;
   const isPending = tab === 'login' ? loginMutation.isPending : registerMutation.isPending;

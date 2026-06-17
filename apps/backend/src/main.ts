@@ -9,10 +9,6 @@ import { AppModule } from './app.module';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 
 const bootstrap = async () => {
-  if (!process.env['JWT_SECRET']) {
-    throw new Error('JWT_SECRET environment variable is required');
-  }
-
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI });

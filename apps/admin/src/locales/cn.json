@@ -52,6 +52,21 @@
     "lastName": "姓",
     "optional": "可选",
     "submitLogin": "登录",
-    "submitRegister": "创建账户"
+    "submitRegister": "创建账户",
+    "checkEmailTitle": "查看您的邮箱",
+    "checkEmailDesc": "我们已向 {{email}} 发送了一个6位验证码。请在下方输入以激活您的账户。",
+    "verificationCode": "验证码",
+    "submitVerify": "验证",
+    "backToLogin": "返回登录",
+    "resend": "重新发送验证码"
+  },
+  "acceptInvite": {
+    "title": "设置密码",
+    "desc": "您已受邀。创建密码以激活您的账户。",
+    "password": "密码",
+    "confirmPassword": "确认密码",
+    "passwordMismatch": "两次输入的密码不一致",
+    "submit": "激活账户",
+    "invalidToken": "此邀请链接无效或已过期。"
   }
 }

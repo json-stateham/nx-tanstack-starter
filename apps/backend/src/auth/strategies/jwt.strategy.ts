@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import type { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import type { AppConfig } from '../../config/app.config';
 import type { JwtPayload, JwtUser } from '../types';
 
 const cookieExtractor = (req: Request): string | null =>
@@ -9,11 +11,11 @@ const cookieExtractor = (req: Request): string | null =>
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(config: ConfigService<AppConfig>) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([cookieExtractor]),
       ignoreExpiration: false,
-      secretOrKey: process.env['JWT_SECRET']!,
+      secretOrKey: config.getOrThrow('JWT_SECRET'),
     });
   }
 

@@ -14,8 +14,10 @@ import { Throttle } from '@nestjs/throttler';
 import type { CookieOptions, Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { AcceptInviteDto } from './dto/accept-invite.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { JwtUser } from './types';
 
@@ -37,6 +39,11 @@ const REFRESH_COOKIE: CookieOptions = {
   path: '/api/v1/auth/refresh',
 };
 
+const setTokenCookies = (res: Response, accessToken: string, refreshToken: string) => {
+  res.cookie('access_token', accessToken, ACCESS_COOKIE);
+  res.cookie('refresh_token', refreshToken, REFRESH_COOKIE);
+};
+
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -44,13 +51,32 @@ export class AuthController {
   @Post('register')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
-  async register(
-    @Body() dto: RegisterDto,
+  async register(@Body() dto: RegisterDto): Promise<{ message: string }> {
+    await this.authService.register(dto);
+    return { message: 'Registration successful. Please check your email to verify your account.' };
+  }
+
+  @Post('verify-email')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  async verifyEmail(
+    @Body() dto: VerifyEmailDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ ok: true }> {
-    const { accessToken, refreshToken } = await this.authService.register(dto);
-    res.cookie('access_token', accessToken, ACCESS_COOKIE);
-    res.cookie('refresh_token', refreshToken, REFRESH_COOKIE);
+    const { accessToken, refreshToken } = await this.authService.verifyEmail(dto);
+    setTokenCookies(res, accessToken, refreshToken);
+    return { ok: true };
+  }
+
+  @Post('accept-invite')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  async acceptInvite(
+    @Body() dto: AcceptInviteDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ ok: true }> {
+    const { accessToken, refreshToken } = await this.authService.acceptInvite(dto);
+    setTokenCookies(res, accessToken, refreshToken);
     return { ok: true };
   }
 
@@ -62,8 +88,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ ok: true }> {
     const { accessToken, refreshToken } = await this.authService.login(dto);
-    res.cookie('access_token', accessToken, ACCESS_COOKIE);
-    res.cookie('refresh_token', refreshToken, REFRESH_COOKIE);
+    setTokenCookies(res, accessToken, refreshToken);
     return { ok: true };
   }
 
@@ -77,8 +102,7 @@ export class AuthController {
     if (!token) throw new UnauthorizedException();
 
     const { accessToken, refreshToken } = await this.authService.refreshTokens(token);
-    res.cookie('access_token', accessToken, ACCESS_COOKIE);
-    res.cookie('refresh_token', refreshToken, REFRESH_COOKIE);
+    setTokenCookies(res, accessToken, refreshToken);
     return { ok: true };
   }
 
