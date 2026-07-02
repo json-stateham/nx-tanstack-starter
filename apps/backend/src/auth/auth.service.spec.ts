@@ -368,10 +368,10 @@ describe('AuthService', () => {
   });
 
   // ────────────────────────────────────────────────────────────
-  // refreshTokens
+  // refreshToken
   // ────────────────────────────────────────────────────────────
 
-  describe('refreshTokens', () => {
+  describe('refreshToken', () => {
     const jwtPayload = { sub: 'u1', email: 'test@example.com', role: 'BUYER' };
     const activeUser = { id: 'u1', email: 'test@example.com', role: 'BUYER', status: 'ACTIVE' };
     const validStoredToken = {
@@ -385,7 +385,7 @@ describe('AuthService', () => {
       jwtService.verify.mockReturnValue(jwtPayload);
       prisma.refreshToken.findUnique.mockResolvedValue(validStoredToken);
 
-      const result = await service.refreshTokens('valid_refresh_token');
+      const result = await service.refreshToken('valid_refresh_token');
 
       expect(result).toEqual(makeTokens());
       expect(prisma.refreshToken.update).toHaveBeenCalledWith({
@@ -399,14 +399,14 @@ describe('AuthService', () => {
         throw new Error('jwt malformed');
       });
 
-      await expect(service.refreshTokens('bad_jwt')).rejects.toBeInstanceOf(UnauthorizedException);
+      await expect(service.refreshToken('bad_jwt')).rejects.toBeInstanceOf(UnauthorizedException);
     });
 
     it('revokes all user tokens and throws when token hash is not in DB', async () => {
       jwtService.verify.mockReturnValue(jwtPayload);
       prisma.refreshToken.findUnique.mockResolvedValue(null);
 
-      await expect(service.refreshTokens('unknown_token')).rejects.toBeInstanceOf(UnauthorizedException);
+      await expect(service.refreshToken('unknown_token')).rejects.toBeInstanceOf(UnauthorizedException);
 
       expect(prisma.refreshToken.updateMany).toHaveBeenCalledWith({
         where: { userId: 'u1', revokedAt: null },
@@ -418,7 +418,7 @@ describe('AuthService', () => {
       jwtService.verify.mockReturnValue(jwtPayload);
       prisma.refreshToken.findUnique.mockResolvedValue({ ...validStoredToken, revokedAt: new Date() });
 
-      await expect(service.refreshTokens('revoked_token')).rejects.toBeInstanceOf(UnauthorizedException);
+      await expect(service.refreshToken('revoked_token')).rejects.toBeInstanceOf(UnauthorizedException);
 
       expect(prisma.refreshToken.updateMany).toHaveBeenCalled();
     });
@@ -430,7 +430,7 @@ describe('AuthService', () => {
         user: { ...activeUser, status: 'BANNED' },
       });
 
-      await expect(service.refreshTokens('token')).rejects.toBeInstanceOf(UnauthorizedException);
+      await expect(service.refreshToken('token')).rejects.toBeInstanceOf(UnauthorizedException);
 
       expect(prisma.refreshToken.update).not.toHaveBeenCalled();
     });

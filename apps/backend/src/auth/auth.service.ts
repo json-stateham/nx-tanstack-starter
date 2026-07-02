@@ -87,15 +87,12 @@ export class AuthService {
       include: { user: true },
     });
 
-    if (!provider?.secret) {
-      this.logger.warn(`Failed login — unknown email: ${email}`);
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    // Always run bcrypt regardless of whether the email exists — prevents
+    // timing-based email enumeration (unknown email ~1ms vs known ~100ms).
+    const DUMMY_HASH = '$2b$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012345';
+    const valid = await compare(input.password, provider?.secret ?? DUMMY_HASH);
 
-    // Always run bcrypt to prevent timing-based status enumeration
-    const valid = await compare(input.password, provider.secret);
-
-    if (!valid || provider.user.status !== 'ACTIVE') {
+    if (!valid || !provider || provider.user.status !== 'ACTIVE') {
       this.logger.warn(`Failed login attempt: ${email}`);
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -218,7 +215,7 @@ export class AuthService {
     await this.emailService.sendVerificationEmail(normalizedEmail, code);
   }
 
-  async refreshTokens(token: string): Promise<Tokens> {
+  async refreshToken(token: string): Promise<Tokens> {
     let payload: JwtPayload;
     try {
       payload = this.jwtService.verify<JwtPayload>(token);
