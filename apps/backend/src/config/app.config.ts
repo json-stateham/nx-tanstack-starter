@@ -1,6 +1,7 @@
 export type AppConfig = {
   DATABASE_URL: string;
-  JWT_SECRET: string;
+  JWT_PRIVATE_KEY: string;
+  JWT_PUBLIC_KEY: string;
   NODE_ENV: string;
   PORT: number;
   FRONTEND_URL: string;
@@ -14,12 +15,14 @@ export type AppConfig = {
 export const validateEnv = (env: Record<string, unknown>): AppConfig => {
   const missing: string[] = [];
   if (!env['DATABASE_URL']) missing.push('DATABASE_URL');
-  if (!env['JWT_SECRET']) missing.push('JWT_SECRET');
+  if (!env['JWT_PRIVATE_KEY']) missing.push('JWT_PRIVATE_KEY');
+  if (!env['JWT_PUBLIC_KEY']) missing.push('JWT_PUBLIC_KEY');
   if (missing.length) throw new Error(`Missing required env vars: ${missing.join(', ')}`);
 
   return {
     DATABASE_URL: String(env['DATABASE_URL']),
-    JWT_SECRET: String(env['JWT_SECRET']),
+    JWT_PRIVATE_KEY: String(env['JWT_PRIVATE_KEY']),
+    JWT_PUBLIC_KEY: String(env['JWT_PUBLIC_KEY']),
     NODE_ENV: String(env['NODE_ENV'] ?? 'development'),
     PORT: Number(env['PORT'] ?? 3000),
     FRONTEND_URL: String(env['FRONTEND_URL'] || 'http://localhost:4200'),

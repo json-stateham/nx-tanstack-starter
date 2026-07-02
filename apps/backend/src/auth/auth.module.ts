@@ -19,7 +19,9 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService<AppConfig>) => ({
-        secret: config.getOrThrow('JWT_SECRET'),
+        privateKey: config.getOrThrow('JWT_PRIVATE_KEY'),
+        publicKey: config.getOrThrow('JWT_PUBLIC_KEY'),
+        signOptions: { algorithm: 'RS256' },
       }),
     }),
   ],
