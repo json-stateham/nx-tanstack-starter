@@ -4,6 +4,7 @@ export type JwtPayload = {
   sub: string;
   email: string;
   role: UserRole;
+  type: 'access' | 'refresh';
 };
 
 export type JwtUser = {

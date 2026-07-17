@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
 import type { JwtService } from '@nestjs/jwt';
 import type { PrismaService } from '../prisma/prisma.service';
 import type { EmailService } from '../common/email/email.service';
+import type { AppConfig } from '../config/app.config';
 
 vi.mock('bcryptjs', () => ({
   hash: vi.fn().mockResolvedValue('hashed_secret'),
@@ -12,17 +14,21 @@ vi.mock('bcryptjs', () => ({
 vi.mock('node:crypto', () => ({
   randomBytes: vi.fn().mockReturnValue({ toString: () => 'raw_token_hex' }),
   randomInt: vi.fn().mockReturnValue(23456),
-  createHash: vi.fn().mockReturnValue({
+  createHmac: vi.fn().mockReturnValue({
     update: vi.fn().mockReturnThis(),
     digest: vi.fn().mockReturnValue('sha256_hash'),
   }),
 }));
 
 import { AuthService } from './auth.service';
-import { compare } from 'bcryptjs';
+import { compare, hash } from 'bcryptjs';
 
 type MockPrisma = {
-  authProvider: { findUnique: ReturnType<typeof vi.fn>; create: ReturnType<typeof vi.fn> };
+  authProvider: {
+    findUnique: ReturnType<typeof vi.fn>;
+    findFirst: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+  };
   user: { create: ReturnType<typeof vi.fn>; findUnique: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
   otpCode: {
     findFirst: ReturnType<typeof vi.fn>;
@@ -50,12 +56,17 @@ describe('AuthService', () => {
   let jwtService: { sign: ReturnType<typeof vi.fn>; verify: ReturnType<typeof vi.fn> };
   let emailService: { sendVerificationEmail: ReturnType<typeof vi.fn>; sendInviteEmail: ReturnType<typeof vi.fn> };
 
+  const configService = {
+    getOrThrow: (key: string) => ({ BCRYPT_ROUNDS: 10, REFRESH_TOKEN_TTL_DAYS: 7, OTP_TTL_MINUTES: 15, INVITE_TTL_HOURS: 48, HMAC_SECRET: 'test-secret' })[key],
+  } as unknown as ConfigService<AppConfig>;
+
   beforeEach(() => {
     vi.clearAllMocks();
 
     prisma = {
       authProvider: {
         findUnique: vi.fn(),
+        findFirst: vi.fn(),
         create: vi.fn().mockResolvedValue({}),
       },
       user: {
@@ -92,6 +103,7 @@ describe('AuthService', () => {
       prisma as unknown as PrismaService,
       jwtService as unknown as JwtService,
       emailService as unknown as EmailService,
+      configService,
     );
   });
 
@@ -168,7 +180,7 @@ describe('AuthService', () => {
     const activeUser = { id: 'u1', email: 'test@example.com', status: 'ACTIVE', role: 'BUYER' };
 
     it('returns tokens and updates lastLoginAt on valid credentials', async () => {
-      prisma.authProvider.findUnique.mockResolvedValue({ secret: 'hashed', user: activeUser });
+      prisma.authProvider.findFirst.mockResolvedValue({ secret: 'hashed', user: activeUser });
       vi.mocked(compare).mockResolvedValue(true as never);
 
       const result = await service.login({ email: 'test@example.com', password: 'correct' });
@@ -180,21 +192,21 @@ describe('AuthService', () => {
       });
     });
 
-    it('normalizes email before lookup', async () => {
-      prisma.authProvider.findUnique.mockResolvedValue(null);
+    it('normalizes email before lookup and excludes soft-deleted users', async () => {
+      prisma.authProvider.findFirst.mockResolvedValue(null);
 
       await expect(service.login({ email: '  UPPER@CASE.COM  ', password: 'pass' }))
         .rejects.toBeInstanceOf(UnauthorizedException);
 
-      expect(prisma.authProvider.findUnique).toHaveBeenCalledWith(
+      expect(prisma.authProvider.findFirst).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { type_identifier: { type: 'EMAIL', identifier: 'upper@case.com' } },
+          where: { type: 'EMAIL', identifier: 'upper@case.com', user: { deletedAt: null } },
         }),
       );
     });
 
     it('throws UnauthorizedException for an unknown email', async () => {
-      prisma.authProvider.findUnique.mockResolvedValue(null);
+      prisma.authProvider.findFirst.mockResolvedValue(null);
 
       await expect(service.login({ email: 'ghost@example.com', password: 'pass' }))
         .rejects.toBeInstanceOf(UnauthorizedException);
@@ -203,7 +215,7 @@ describe('AuthService', () => {
     });
 
     it('throws UnauthorizedException when password is incorrect', async () => {
-      prisma.authProvider.findUnique.mockResolvedValue({ secret: 'hashed', user: activeUser });
+      prisma.authProvider.findFirst.mockResolvedValue({ secret: 'hashed', user: activeUser });
       vi.mocked(compare).mockResolvedValue(false as never);
 
       await expect(service.login({ email: 'test@example.com', password: 'wrong' }))
@@ -214,11 +226,24 @@ describe('AuthService', () => {
 
     it('throws UnauthorizedException when user account is not ACTIVE', async () => {
       const pendingUser = { ...activeUser, status: 'PENDING_VERIFICATION' };
-      prisma.authProvider.findUnique.mockResolvedValue({ secret: 'hashed', user: pendingUser });
+      prisma.authProvider.findFirst.mockResolvedValue({ secret: 'hashed', user: pendingUser });
       vi.mocked(compare).mockResolvedValue(true as never);
 
       await expect(service.login({ email: 'test@example.com', password: 'pass' }))
         .rejects.toBeInstanceOf(UnauthorizedException);
+    });
+
+    it('generates the timing-safety dummy hash at the configured bcrypt cost', () => {
+      expect(hash).toHaveBeenCalledWith('dummy-password-for-timing-safety', 10);
+    });
+
+    it('compares against the dummy hash (not a hardcoded string) for an unknown email', async () => {
+      prisma.authProvider.findFirst.mockResolvedValue(null);
+
+      await expect(service.login({ email: 'ghost@example.com', password: 'pass' }))
+        .rejects.toBeInstanceOf(UnauthorizedException);
+
+      expect(compare).toHaveBeenCalledWith('pass', 'hashed_secret');
     });
   });
 
@@ -227,7 +252,7 @@ describe('AuthService', () => {
   // ────────────────────────────────────────────────────────────
 
   describe('verifyEmail', () => {
-    const mockUser = { id: 'u1', email: 'test@example.com', role: 'BUYER' };
+    const mockUser = { id: 'u1', email: 'test@example.com', role: 'BUYER', status: 'PENDING_VERIFICATION' };
     const mockOtp = { id: 'otp-1' };
 
     it('activates user and returns tokens on valid code', async () => {
@@ -247,6 +272,16 @@ describe('AuthService', () => {
         .rejects.toBeInstanceOf(UnauthorizedException);
 
       expect(prisma.otpCode.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('throws UnauthorizedException when user is not pending verification (e.g. suspended or banned)', async () => {
+      prisma.user.findUnique.mockResolvedValue({ ...mockUser, status: 'SUSPENDED' });
+
+      await expect(service.verifyEmail({ email: 'test@example.com', code: '123456' }))
+        .rejects.toBeInstanceOf(UnauthorizedException);
+
+      expect(prisma.otpCode.findFirst).not.toHaveBeenCalled();
+      expect(prisma.$transaction).not.toHaveBeenCalled();
     });
 
     it('throws UnauthorizedException when OTP is invalid or expired', async () => {
@@ -276,7 +311,7 @@ describe('AuthService', () => {
   // ────────────────────────────────────────────────────────────
 
   describe('acceptInvite', () => {
-    const inviteUser = { id: 'u1', email: 'invited@example.com', role: 'BUYER' };
+    const inviteUser = { id: 'u1', email: 'invited@example.com', role: 'BUYER', status: 'PENDING_VERIFICATION' };
     const mockOtp = { id: 'otp-1', userId: 'u1', user: inviteUser };
 
     it('creates auth provider, activates user, and returns tokens', async () => {
@@ -292,6 +327,18 @@ describe('AuthService', () => {
       prisma.otpCode.findFirst.mockResolvedValue(null);
 
       await expect(service.acceptInvite({ token: 'bad_token', password: 'pass' }))
+        .rejects.toBeInstanceOf(UnauthorizedException);
+
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('throws UnauthorizedException when the invited user is not pending verification (e.g. suspended or banned)', async () => {
+      prisma.otpCode.findFirst.mockResolvedValue({
+        ...mockOtp,
+        user: { ...inviteUser, status: 'SUSPENDED' },
+      });
+
+      await expect(service.acceptInvite({ token: 'raw_invite', password: 'newpass123' }))
         .rejects.toBeInstanceOf(UnauthorizedException);
 
       expect(prisma.$transaction).not.toHaveBeenCalled();
@@ -373,7 +420,7 @@ describe('AuthService', () => {
 
   describe('refreshToken', () => {
     const jwtPayload = { sub: 'u1', email: 'test@example.com', role: 'BUYER' };
-    const activeUser = { id: 'u1', email: 'test@example.com', role: 'BUYER', status: 'ACTIVE' };
+    const activeUser = { id: 'u1', email: 'test@example.com', role: 'BUYER', status: 'ACTIVE', deletedAt: null };
     const validStoredToken = {
       id: 't1',
       revokedAt: null,
@@ -392,6 +439,15 @@ describe('AuthService', () => {
         where: { id: 't1' },
         data: { revokedAt: expect.any(Date) },
       });
+    });
+
+    it('verifies with the algorithm pinned to RS256 (rejects algorithm-confusion tokens)', async () => {
+      jwtService.verify.mockReturnValue(jwtPayload);
+      prisma.refreshToken.findUnique.mockResolvedValue(validStoredToken);
+
+      await service.refreshToken('valid_refresh_token');
+
+      expect(jwtService.verify).toHaveBeenCalledWith('valid_refresh_token', { algorithms: ['RS256'] });
     });
 
     it('throws UnauthorizedException when JWT is malformed', async () => {
@@ -428,6 +484,18 @@ describe('AuthService', () => {
       prisma.refreshToken.findUnique.mockResolvedValue({
         ...validStoredToken,
         user: { ...activeUser, status: 'BANNED' },
+      });
+
+      await expect(service.refreshToken('token')).rejects.toBeInstanceOf(UnauthorizedException);
+
+      expect(prisma.refreshToken.update).not.toHaveBeenCalled();
+    });
+
+    it('throws UnauthorizedException when user has been soft-deleted', async () => {
+      jwtService.verify.mockReturnValue(jwtPayload);
+      prisma.refreshToken.findUnique.mockResolvedValue({
+        ...validStoredToken,
+        user: { ...activeUser, deletedAt: new Date() },
       });
 
       await expect(service.refreshToken('token')).rejects.toBeInstanceOf(UnauthorizedException);

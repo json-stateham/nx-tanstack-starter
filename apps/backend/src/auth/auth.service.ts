@@ -1,10 +1,12 @@
 import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { UserRole } from '@prisma/client';
 import { hash, compare } from 'bcryptjs';
-import { randomBytes, randomInt, createHash } from 'node:crypto';
+import { randomBytes, randomInt, createHmac } from 'node:crypto';
 import { EmailService } from '../common/email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
+import type { AppConfig } from '../config/app.config';
 import type { JwtPayload } from './types';
 
 type RegisterInput = {
@@ -24,24 +26,37 @@ type Tokens = {
   refreshToken: string;
 };
 
-const BCRYPT_ROUNDS = 10;
-const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const OTP_TTL_MS = 15 * 60 * 1000;
-const INVITE_TTL_MS = 48 * 60 * 60 * 1000;
-
-const generateOtp = (): string => String(100000 + randomInt(900000));
-const generateInviteToken = (): string => randomBytes(32).toString('hex');
-const sha256 = (value: string): string => createHash('sha256').update(value).digest('hex');
+const generateOtp = (): string => String(100000 + randomInt(900000)); // guarantees no leading zero
+const generateInviteToken = (): string => randomBytes(32).toString('hex'); // 256-bit entropy
+const hmacSha256 = (value: string, secret: string): string =>
+  createHmac('sha256', secret).update(value).digest('hex'); // store hash, never the raw token
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  private readonly bcryptRounds: number;
+  private readonly refreshTtlMs: number;
+  private readonly otpTtlMs: number;
+  private readonly inviteTtlMs: number;
+  private readonly hmacSecret: string;
+  // Hashed at the same configured cost as real credentials, so the login()
+  // timing-safety compare below can't be distinguished from a real user's
+  // hash by cost alone (see bcryptRounds).
+  private readonly dummyHash: Promise<string>;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
-  ) {}
+    config: ConfigService<AppConfig>,
+  ) {
+    this.bcryptRounds = config.getOrThrow('BCRYPT_ROUNDS');
+    this.refreshTtlMs = config.getOrThrow('REFRESH_TOKEN_TTL_DAYS') * 24 * 60 * 60 * 1000;
+    this.otpTtlMs = config.getOrThrow('OTP_TTL_MINUTES') * 60 * 1000;
+    this.inviteTtlMs = config.getOrThrow('INVITE_TTL_HOURS') * 60 * 60 * 1000;
+    this.hmacSecret = config.getOrThrow('HMAC_SECRET');
+    this.dummyHash = hash('dummy-password-for-timing-safety', this.bcryptRounds);
+  }
 
   async register(input: RegisterInput): Promise<void> {
     const email = input.email.toLowerCase().trim();
@@ -51,7 +66,7 @@ export class AuthService {
     });
     if (existing) throw new ConflictException('Email already registered');
 
-    const secret = await hash(input.password, BCRYPT_ROUNDS);
+    const secret = await hash(input.password, this.bcryptRounds);
     const code = generateOtp();
 
     await this.prisma.user.create({
@@ -70,7 +85,7 @@ export class AuthService {
           create: {
             code,
             type: 'EMAIL_VERIFICATION',
-            expiresAt: new Date(Date.now() + OTP_TTL_MS),
+            expiresAt: new Date(Date.now() + this.otpTtlMs),
           },
         },
       },
@@ -82,15 +97,16 @@ export class AuthService {
   async login(input: LoginInput): Promise<Tokens> {
     const email = input.email.toLowerCase().trim();
 
-    const provider = await this.prisma.authProvider.findUnique({
-      where: { type_identifier: { type: 'EMAIL', identifier: email } },
+    const provider = await this.prisma.authProvider.findFirst({
+      where: { type: 'EMAIL', identifier: email, user: { deletedAt: null } },
       include: { user: true },
     });
 
     // Always run bcrypt regardless of whether the email exists — prevents
-    // timing-based email enumeration (unknown email ~1ms vs known ~100ms).
-    const DUMMY_HASH = '$2b$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012345';
-    const valid = await compare(input.password, provider?.secret ?? DUMMY_HASH);
+    // timing-based email enumeration. dummyHash is costed at this.bcryptRounds
+    // so the unknown-email branch can't be distinguished from a real one by
+    // whatever cost factor is currently configured.
+    const valid = await compare(input.password, provider?.secret ?? (await this.dummyHash));
 
     if (!valid || !provider || provider.user.status !== 'ACTIVE') {
       this.logger.warn(`Failed login attempt: ${email}`);
@@ -113,8 +129,12 @@ export class AuthService {
       where: { email, deletedAt: null },
     });
 
-    // Same error for "not found" and "invalid code" to avoid enumeration
-    if (!user) throw new UnauthorizedException('Invalid or expired code');
+    // Same error for "not found", "invalid code", and "already active/suspended"
+    // to avoid enumeration and to stop a stale OTP from reactivating a
+    // since-suspended/banned account.
+    if (!user || user.status !== 'PENDING_VERIFICATION') {
+      throw new UnauthorizedException('Invalid or expired code');
+    }
 
     const otp = await this.prisma.otpCode.findFirst({
       where: {
@@ -140,8 +160,7 @@ export class AuthService {
   }
 
   async acceptInvite(input: { token: string; password: string }): Promise<Tokens> {
-    // Invite tokens are stored as SHA-256 hashes — same pattern as refresh tokens
-    const tokenHash = sha256(input.token);
+    const tokenHash = hmacSha256(input.token, this.hmacSecret);
 
     const otp = await this.prisma.otpCode.findFirst({
       where: {
@@ -154,9 +173,13 @@ export class AuthService {
       include: { user: true },
     });
 
-    if (!otp) throw new UnauthorizedException('Invalid or expired invite');
+    // Same guard as verifyEmail: a stale, unused invite must not be able to
+    // reactivate a user whose status has since moved on (suspended/banned/etc).
+    if (!otp || otp.user.status !== 'PENDING_VERIFICATION') {
+      throw new UnauthorizedException('Invalid or expired invite');
+    }
 
-    const secret = await hash(input.password, BCRYPT_ROUNDS);
+    const secret = await hash(input.password, this.bcryptRounds);
 
     await this.prisma.$transaction([
       this.prisma.otpCode.update({ where: { id: otp.id }, data: { usedAt: new Date() } }),
@@ -174,13 +197,12 @@ export class AuthService {
 
   async createInviteToken(userId: string, email: string): Promise<void> {
     const token = generateInviteToken();
-    // Store the hash — never the raw token (same pattern as refresh tokens)
     await this.prisma.otpCode.create({
       data: {
         userId,
-        code: sha256(token),
+        code: hmacSha256(token, this.hmacSecret),
         type: 'USER_INVITE',
-        expiresAt: new Date(Date.now() + INVITE_TTL_MS),
+        expiresAt: new Date(Date.now() + this.inviteTtlMs),
       },
     });
     await this.emailService.sendInviteEmail(email, token);
@@ -208,7 +230,7 @@ export class AuthService {
         userId: user.id,
         code,
         type: 'EMAIL_VERIFICATION',
-        expiresAt: new Date(Date.now() + OTP_TTL_MS),
+        expiresAt: new Date(Date.now() + this.otpTtlMs),
       },
     });
 
@@ -218,12 +240,12 @@ export class AuthService {
   async refreshToken(token: string): Promise<Tokens> {
     let payload: JwtPayload;
     try {
-      payload = this.jwtService.verify<JwtPayload>(token);
+      payload = this.jwtService.verify<JwtPayload>(token, { algorithms: ['RS256'] });
     } catch {
       throw new UnauthorizedException();
     }
 
-    const tokenHash = sha256(token);
+    const tokenHash = hmacSha256(token, this.hmacSecret);
     const stored = await this.prisma.refreshToken.findUnique({
       where: { tokenHash },
       include: { user: true },
@@ -238,7 +260,7 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    if (stored.user.status !== 'ACTIVE') {
+    if (stored.user.status !== 'ACTIVE' || stored.user.deletedAt !== null) {
       throw new UnauthorizedException('Account is suspended or banned');
     }
 
@@ -252,7 +274,7 @@ export class AuthService {
   }
 
   async logout(token: string): Promise<void> {
-    const tokenHash = sha256(token);
+    const tokenHash = hmacSha256(token, this.hmacSecret);
     await this.prisma.refreshToken.updateMany({
       where: { tokenHash, revokedAt: null },
       data: { revokedAt: new Date() },
@@ -260,16 +282,20 @@ export class AuthService {
   }
 
   private async generateTokens(userId: string, email: string, role: UserRole): Promise<Tokens> {
-    const payload: JwtPayload = { sub: userId, email, role };
-
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const accessToken = this.jwtService.sign(
+      { sub: userId, email, role, type: 'access' } satisfies JwtPayload,
+      { expiresIn: '15m' },
+    );
+    const refreshToken = this.jwtService.sign(
+      { sub: userId, email, role, type: 'refresh' } satisfies JwtPayload,
+      { expiresIn: '7d' },
+    );
 
     await this.prisma.refreshToken.create({
       data: {
         userId,
-        tokenHash: sha256(refreshToken),
-        expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
+        tokenHash: hmacSha256(refreshToken, this.hmacSecret),
+        expiresAt: new Date(Date.now() + this.refreshTtlMs),
       },
     });
 
