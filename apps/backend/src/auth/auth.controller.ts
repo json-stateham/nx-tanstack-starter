@@ -11,10 +11,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { ApiCookieAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import type { CookieOptions, Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
+import { CurrentUserDto } from './dto/current-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
@@ -46,6 +48,7 @@ const setTokenCookies = (res: Response, accessToken: string, refreshToken: strin
   res.cookie('refresh_token', refreshToken, REFRESH_COOKIE);
 };
 
+@ApiTags('auth')
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -118,6 +121,7 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
+  @ApiCookieAuth()
   @HttpCode(HttpStatus.OK)
   async logout(
     @Req() req: Request,
@@ -133,6 +137,8 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
+  @ApiCookieAuth()
+  @ApiOkResponse({ type: CurrentUserDto })
   me(@CurrentUser() user: JwtUser): JwtUser {
     return user;
   }

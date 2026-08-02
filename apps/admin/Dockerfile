@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM node:20-alpine AS deps
 WORKDIR /app
 
 RUN corepack enable
@@ -6,6 +6,14 @@ RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
+
+FROM deps AS development
+COPY . .
+EXPOSE 3001
+CMD ["sh", "-c", "node_modules/.bin/vite dev apps/admin --host 0.0.0.0 --port ${PORT:-3001}"]
+
+
+FROM deps AS builder
 COPY . .
 RUN pnpm build:admin
 

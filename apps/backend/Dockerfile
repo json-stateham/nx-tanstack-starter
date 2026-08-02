@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM node:20-alpine AS deps
 WORKDIR /app
 
 RUN corepack enable
@@ -6,6 +6,16 @@ RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
+
+FROM deps AS development
+COPY . .
+ENV DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder
+RUN pnpm db:generate
+EXPOSE 3000
+CMD ["pnpm", "backend"]
+
+
+FROM deps AS builder
 COPY . .
 ENV DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder
 RUN pnpm db:generate

@@ -7,6 +7,8 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
+  root: fileURLToPath(new URL('.', import.meta.url)),
+  cacheDir: '../../node_modules/.vite/apps/storefront',
   plugins: [
     vue(),
     vueJsx(),
@@ -16,5 +18,12 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
+  },
+  build: {
+    outDir: '../../dist/apps/storefront',
+    emptyOutDir: true,
+  },
+  server: {
+    port: 4201,
   },
 })

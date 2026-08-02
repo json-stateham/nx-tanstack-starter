@@ -6,10 +6,13 @@ import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 
+import { SwaggerModule } from '@nestjs/swagger';
+
 import { AppModule } from './app.module';
 import type { AppConfig } from './config/app.config';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 import { ThrottlerExceptionFilter } from './common/filters/throttler-exception.filter';
+import { createSwaggerDocument } from './swagger';
 
 const bootstrap = async () => {
   const app = await NestFactory.create(AppModule);
@@ -31,6 +34,8 @@ const bootstrap = async () => {
     }),
   );
   app.useGlobalFilters(new PrismaExceptionFilter(), new ThrottlerExceptionFilter());
+
+  SwaggerModule.setup('api/docs', app, createSwaggerDocument(app));
 
   const port = config.getOrThrow('PORT');
   await app.listen(port);
