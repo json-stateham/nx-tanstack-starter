@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import {
   Activity,
   Bell,
@@ -44,10 +44,10 @@ function AdminHome() {
   });
 
   const navItems = [
-    { label: t('home.nav.overview'), icon: LayoutDashboard, active: true },
-    { label: t('home.nav.users'), icon: Users },
-    { label: t('home.nav.settings'), icon: Settings },
-  ];
+    { label: t('home.nav.overview'), icon: LayoutDashboard, to: '/', active: true },
+    { label: t('home.nav.users'), icon: Users, to: '/users', active: false },
+    { label: t('home.nav.settings'), icon: Settings, to: '/', active: false },
+  ] as const;
 
   const metrics = [
     {
@@ -104,18 +104,18 @@ function AdminHome() {
           className="mt-5 grid grid-cols-3 gap-2 lg:mt-8 lg:grid-cols-1"
         >
           {navItems.map((item) => (
-            <a
+            <Link
               aria-current={item.active ? 'page' : undefined}
               className={cn(
                 'flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-zinc-50 lg:justify-start',
                 item.active && 'bg-zinc-900 text-zinc-50',
               )}
-              href="/"
+              to={item.to}
               key={item.label}
             >
               <item.icon className="size-4" aria-hidden="true" />
               <span>{item.label}</span>
-            </a>
+            </Link>
           ))}
         </nav>
       </aside>

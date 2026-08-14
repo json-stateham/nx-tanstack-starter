@@ -211,6 +211,45 @@ export interface components {
             /** @enum {string} */
             role: "BUYER" | "ADMIN" | "MODERATOR";
         };
+        UserProfileDto: {
+            id: string;
+            userId: string;
+            firstName: string;
+            lastName: string;
+            avatarUrl?: string | null;
+            /** Format: date-time */
+            birthDate?: string | null;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UserListItemDto: {
+            id: string;
+            email: string;
+            phone?: string | null;
+            /** @enum {string} */
+            role: "BUYER" | "ADMIN" | "MODERATOR";
+            /** @enum {string} */
+            status: "ACTIVE" | "PENDING_VERIFICATION" | "SUSPENDED" | "BANNED";
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            deletedAt?: string | null;
+            /** Format: date-time */
+            emailVerifiedAt?: string | null;
+            /** Format: date-time */
+            phoneVerifiedAt?: string | null;
+            /** Format: date-time */
+            lastLoginAt?: string | null;
+            profile?: components["schemas"]["UserProfileDto"] | null;
+        };
+        PaginatedUsersDto: {
+            data: components["schemas"]["UserListItemDto"][];
+            total: number;
+            page: number;
+            limit: number;
+        };
         CreateUserDto: Record<string, never>;
         UpdateUserDto: Record<string, never>;
     };
@@ -399,7 +438,10 @@ export interface operations {
     };
     UsersController_findAll_v1: {
         parameters: {
-            query?: never;
+            query?: {
+                limit?: number;
+                page?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -410,7 +452,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PaginatedUsersDto"];
+                };
             };
         };
     };

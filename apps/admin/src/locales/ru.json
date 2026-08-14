@@ -68,5 +68,35 @@
     "passwordMismatch": "Пароли не совпадают",
     "submit": "Активировать аккаунт",
     "invalidToken": "Ссылка-приглашение недействительна или устарела."
+  },
+  "users": {
+    "title": "Пользователи",
+    "columns": {
+      "email": "Email",
+      "name": "Имя",
+      "role": "Роль",
+      "status": "Статус",
+      "createdAt": "Создан",
+      "lastLogin": "Последний вход"
+    },
+    "roles": {
+      "BUYER": "Покупатель",
+      "ADMIN": "Администратор",
+      "MODERATOR": "Модератор"
+    },
+    "statuses": {
+      "ACTIVE": "Активен",
+      "PENDING_VERIFICATION": "Ожидает подтверждения",
+      "SUSPENDED": "Приостановлен",
+      "BANNED": "Забанен"
+    },
+    "noName": "—",
+    "never": "Никогда",
+    "empty": "Пользователи не найдены.",
+    "pagination": {
+      "previous": "Назад",
+      "next": "Вперёд",
+      "pageOf": "Страница {{page}} из {{totalPages}}"
+    }
   }
 }

@@ -68,5 +68,35 @@
     "passwordMismatch": "كلمتا المرور غير متطابقتين",
     "submit": "تفعيل الحساب",
     "invalidToken": "رابط الدعوة غير صالح أو منتهي الصلاحية."
+  },
+  "users": {
+    "title": "المستخدمون",
+    "columns": {
+      "email": "البريد الإلكتروني",
+      "name": "الاسم",
+      "role": "الدور",
+      "status": "الحالة",
+      "createdAt": "تاريخ الإنشاء",
+      "lastLogin": "آخر دخول"
+    },
+    "roles": {
+      "BUYER": "مشتري",
+      "ADMIN": "مسؤول",
+      "MODERATOR": "مشرف"
+    },
+    "statuses": {
+      "ACTIVE": "نشط",
+      "PENDING_VERIFICATION": "بانتظار التحقق",
+      "SUSPENDED": "معلق",
+      "BANNED": "محظور"
+    },
+    "noName": "—",
+    "never": "أبدًا",
+    "empty": "لم يتم العثور على مستخدمين.",
+    "pagination": {
+      "previous": "السابق",
+      "next": "التالي",
+      "pageOf": "صفحة {{page}} من {{totalPages}}"
+    }
   }
 }

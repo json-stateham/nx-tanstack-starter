@@ -197,14 +197,43 @@
     "/api/v1/users": {
       "get": {
         "operationId": "UsersController_findAll_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedUsersDto"
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
         "tags": [
-          "Users"
+          "users"
         ]
       },
       "post": {
@@ -225,8 +254,13 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
         "tags": [
-          "Users"
+          "users"
         ]
       }
     },
@@ -248,8 +282,13 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
         "tags": [
-          "Users"
+          "users"
         ]
       },
       "patch": {
@@ -279,8 +318,13 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
         "tags": [
-          "Users"
+          "users"
         ]
       },
       "delete": {
@@ -300,8 +344,13 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
         "tags": [
-          "Users"
+          "users"
         ]
       }
     }
@@ -422,6 +471,146 @@
           "id",
           "email",
           "role"
+        ]
+      },
+      "UserProfileDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "birthDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "firstName",
+          "lastName",
+          "updatedAt"
+        ]
+      },
+      "UserListItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "BUYER",
+              "ADMIN",
+              "MODERATOR"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "PENDING_VERIFICATION",
+              "SUSPENDED",
+              "BANNED"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deletedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "emailVerifiedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "phoneVerifiedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "lastLoginAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "profile": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserProfileDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PaginatedUsersDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserListItemDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "limit"
         ]
       },
       "CreateUserDto": {

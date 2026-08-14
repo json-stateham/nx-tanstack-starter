@@ -1,4 +1,4 @@
-// Runs against the compiled backend (dist/apps/backend) — the plain tsx/esbuild
+// Runs against the compiled backend (apps/backend/dist) — the plain tsx/esbuild
 // runtime doesn't emit the decorator metadata Nest needs for constructor DI,
 // so this must run post-build, not against TS sources directly.
 require('reflect-metadata');
@@ -9,8 +9,8 @@ const { resolve } = require('node:path');
 const { NestFactory } = require('@nestjs/core');
 const { VersioningType } = require('@nestjs/common');
 
-const { AppModule } = require('../../../dist/apps/backend/src/app.module.js');
-const { createSwaggerDocument } = require('../../../dist/apps/backend/src/swagger.js');
+const { AppModule } = require('../dist/src/app.module.js');
+const { createSwaggerDocument } = require('../dist/src/swagger.js');
 
 const run = async () => {
   const app = await NestFactory.create(AppModule);

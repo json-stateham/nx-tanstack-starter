@@ -68,5 +68,35 @@
     "passwordMismatch": "パスワードが一致しません",
     "submit": "アカウントを有効化",
     "invalidToken": "この招待リンクは無効または期限切れです。"
+  },
+  "users": {
+    "title": "ユーザー",
+    "columns": {
+      "email": "メールアドレス",
+      "name": "名前",
+      "role": "ロール",
+      "status": "ステータス",
+      "createdAt": "作成日",
+      "lastLogin": "最終ログイン"
+    },
+    "roles": {
+      "BUYER": "購入者",
+      "ADMIN": "管理者",
+      "MODERATOR": "モデレーター"
+    },
+    "statuses": {
+      "ACTIVE": "アクティブ",
+      "PENDING_VERIFICATION": "確認待ち",
+      "SUSPENDED": "停止中",
+      "BANNED": "禁止済み"
+    },
+    "noName": "—",
+    "never": "なし",
+    "empty": "ユーザーが見つかりません。",
+    "pagination": {
+      "previous": "前へ",
+      "next": "次へ",
+      "pageOf": "{{totalPages}}ページ中{{page}}ページ目"
+    }
   }
 }

@@ -68,5 +68,35 @@
     "passwordMismatch": "两次输入的密码不一致",
     "submit": "激活账户",
     "invalidToken": "此邀请链接无效或已过期。"
+  },
+  "users": {
+    "title": "用户",
+    "columns": {
+      "email": "电子邮件",
+      "name": "姓名",
+      "role": "角色",
+      "status": "状态",
+      "createdAt": "创建时间",
+      "lastLogin": "最近登录"
+    },
+    "roles": {
+      "BUYER": "买家",
+      "ADMIN": "管理员",
+      "MODERATOR": "版主"
+    },
+    "statuses": {
+      "ACTIVE": "活跃",
+      "PENDING_VERIFICATION": "待验证",
+      "SUSPENDED": "已暂停",
+      "BANNED": "已封禁"
+    },
+    "noName": "—",
+    "never": "从未",
+    "empty": "未找到用户。",
+    "pagination": {
+      "previous": "上一页",
+      "next": "下一页",
+      "pageOf": "第 {{page}} 页，共 {{totalPages}} 页"
+    }
   }
 }

@@ -68,5 +68,35 @@
     "passwordMismatch": "Las contraseñas no coinciden",
     "submit": "Activar cuenta",
     "invalidToken": "Este enlace de invitación es inválido o ha expirado."
+  },
+  "users": {
+    "title": "Usuarios",
+    "columns": {
+      "email": "Correo electrónico",
+      "name": "Nombre",
+      "role": "Rol",
+      "status": "Estado",
+      "createdAt": "Creado",
+      "lastLogin": "Último acceso"
+    },
+    "roles": {
+      "BUYER": "Comprador",
+      "ADMIN": "Administrador",
+      "MODERATOR": "Moderador"
+    },
+    "statuses": {
+      "ACTIVE": "Activo",
+      "PENDING_VERIFICATION": "Pendiente de verificación",
+      "SUSPENDED": "Suspendido",
+      "BANNED": "Baneado"
+    },
+    "noName": "—",
+    "never": "Nunca",
+    "empty": "No se encontraron usuarios.",
+    "pagination": {
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "pageOf": "Página {{page}} de {{totalPages}}"
+    }
   }
 }

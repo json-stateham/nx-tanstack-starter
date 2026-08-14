@@ -68,5 +68,35 @@
     "passwordMismatch": "Passwords do not match",
     "submit": "Activate account",
     "invalidToken": "This invite link is invalid or has expired."
+  },
+  "users": {
+    "title": "Users",
+    "columns": {
+      "email": "Email",
+      "name": "Name",
+      "role": "Role",
+      "status": "Status",
+      "createdAt": "Created",
+      "lastLogin": "Last login"
+    },
+    "roles": {
+      "BUYER": "Buyer",
+      "ADMIN": "Admin",
+      "MODERATOR": "Moderator"
+    },
+    "statuses": {
+      "ACTIVE": "Active",
+      "PENDING_VERIFICATION": "Pending verification",
+      "SUSPENDED": "Suspended",
+      "BANNED": "Banned"
+    },
+    "noName": "—",
+    "never": "Never",
+    "empty": "No users found.",
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}"
+    }
   }
 }

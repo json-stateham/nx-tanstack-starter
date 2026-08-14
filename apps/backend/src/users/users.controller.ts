@@ -12,16 +12,20 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiCookieAuth, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtUser } from '../auth/types';
 import { CreateUserDto } from './dto/create-user.dto';
+import { PaginatedUsersDto } from './dto/paginated-users.dto';
 import { QueryUsersDto } from './dto/query-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
+@ApiTags('users')
+@ApiCookieAuth()
 @Controller({ path: 'users', version: '1' })
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'MODERATOR')
@@ -31,6 +35,9 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiOkResponse({ type: PaginatedUsersDto })
   findAll(@Query() query: QueryUsersDto) {
     return this.usersService.findAll(query);
   }
